@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
 
+const app = express();
+app.use(express.json());
+
 const { jwtAuthMiddleware, generateToken } = require("./../jwt");
 
 //POST-add a new user
@@ -68,8 +71,9 @@ router.get("/profile", jwtAuthMiddleware, async (req, res) => {
 });
 
 router.put("/profile/password", jwtAuthMiddleware, async (req, res) => {
+  console.log("Updating password for user:", req);
   try {
-    const userId = req.user;
+    const userId = req.user.id;
 
     const { oldPassword, newPassword } = req.body;
 
