@@ -17,7 +17,7 @@ const checkAdminRole = async (userId) => {
   }
 };
 
-//POST-add a new candidate
+//apis for the candidates
 
 router.get("/", async (req, res) => {
   try {
