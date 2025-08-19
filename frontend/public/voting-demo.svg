@@ -1,0 +1,56 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="150" cy="150" r="140" fill="#4F46E5" opacity="0.1" stroke="#4F46E5" stroke-width="2"/>
+  
+  <!-- Ballot Box -->
+  <rect x="80" y="120" width="140" height="100" rx="8" fill="#1E40AF" stroke="#1D4ED8" stroke-width="2"/>
+  <rect x="85" y="125" width="130" height="90" rx="4" fill="#3B82F6"/>
+  
+  <!-- Ballot Box Top -->
+  <rect x="70" y="110" width="160" height="20" rx="10" fill="#1E40AF"/>
+  <rect x="75" y="113" width="150" height="14" rx="7" fill="#2563EB"/>
+  
+  <!-- Slot for ballot -->
+  <rect x="140" y="115" width="20" height="4" rx="2" fill="#1E40AF"/>
+  
+  <!-- Ballot Paper -->
+  <rect x="120" y="60" width="60" height="80" rx="4" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="2" transform="rotate(-15 150 100)"/>
+  
+  <!-- Checkboxes on ballot -->
+  <rect x="130" y="75" width="8" height="8" rx="1" fill="#FFFFFF" stroke="#6B7280" stroke-width="1" transform="rotate(-15 150 100)"/>
+  <rect x="130" y="90" width="8" height="8" rx="1" fill="#FFFFFF" stroke="#6B7280" stroke-width="1" transform="rotate(-15 150 100)"/>
+  <rect x="130" y="105" width="8" height="8" rx="1" fill="#10B981" stroke="#059669" stroke-width="1" transform="rotate(-15 150 100)"/>
+  
+  <!-- Check mark -->
+  <path d="M131 108 L133 110 L137 106" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(-15 150 100)"/>
+  
+  <!-- Text lines on ballot -->
+  <rect x="145" y="76" width="20" height="2" rx="1" fill="#D1D5DB" transform="rotate(-15 150 100)"/>
+  <rect x="145" y="91" width="20" height="2" rx="1" fill="#D1D5DB" transform="rotate(-15 150 100)"/>
+  <rect x="145" y="106" width="20" height="2" rx="1" fill="#D1D5DB" transform="rotate(-15 150 100)"/>
+  
+  <!-- Hand holding ballot -->
+  <ellipse cx="100" cy="140" rx="12" ry="8" fill="#FBBF24" transform="rotate(-15 100 140)"/>
+  <rect x="88" y="135" width="24" height="20" rx="12" fill="#FBBF24" transform="rotate(-15 100 140)"/>
+  
+  <!-- Stars for decoration -->
+  <path d="M50 80 L52 86 L58 86 L53 90 L55 96 L50 92 L45 96 L47 90 L42 86 L48 86 Z" fill="#FCD34D"/>
+  <path d="M250 200 L252 206 L258 206 L253 210 L255 216 L250 212 L245 216 L247 210 L242 206 L248 206 Z" fill="#FCD34D"/>
+  
+  <!-- Lock icon for security -->
+  <rect x="200" y="240" width="20" height="15" rx="2" fill="#10B981"/>
+  <path d="M205 240 C205 236 208 233 212 233 C216 233 219 236 219 240" stroke="#10B981" stroke-width="2" fill="none"/>
+  <circle cx="212" cy="247" r="2" fill="#FFFFFF"/>
+  
+  <!-- Government building silhouette -->
+  <rect x="20" y="250" width="60" height="30" fill="#6B7280" opacity="0.3"/>
+  <rect x="25" y="245" width="50" height="5" fill="#6B7280" opacity="0.3"/>
+  <rect x="30" y="240" width="40" height="5" fill="#6B7280" opacity="0.3"/>
+  
+  <!-- Columns -->
+  <rect x="28" y="250" width="4" height="30" fill="#6B7280" opacity="0.4"/>
+  <rect x="38" y="250" width="4" height="30" fill="#6B7280" opacity="0.4"/>
+  <rect x="48" y="250" width="4" height="30" fill="#6B7280" opacity="0.4"/>
+  <rect x="58" y="250" width="4" height="30" fill="#6B7280" opacity="0.4"/>
+  <rect x="68" y="250" width="4" height="30" fill="#6B7280" opacity="0.4"/>
+</svg>
