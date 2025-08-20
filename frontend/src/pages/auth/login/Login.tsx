@@ -1,8 +1,10 @@
-import React, { use, useState } from "react";
-import { Form, Input, Button, Card, Typography, message, Checkbox } from "antd";
+import { useState } from "react";
+import { Form, Input, Button, Card, Typography, message } from "antd";
 import { UserOutlined, LockOutlined, LoginOutlined } from "@ant-design/icons";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
+import { login } from "../../../apis/AuthApis";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 const { Title, Text } = Typography;
 
@@ -10,39 +12,49 @@ interface LoginFormValues {
   citizanship_no: string;
   password: string;
 }
-
+interface AuthStore {
+  setToken: (token: string) => void;
+  setAdmin: (isAdmin: boolean) => void;
+}
 
 const Login = () => {
+  const [messageApi, contextHolder] = message.useMessage();
+  const { setToken, setAdmin } = useAuthStore() as AuthStore;
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
   const loginMutation = useMutation({
     mutationFn: login,
-    onSuccess: (data: { token: string }) => {
-     
-        message.success("Login Successful!");
-        setToken(data.token);
-        Navigate("/");
+    onSuccess: (data: { token: string; message: string; role: string }) => {
+      console.log("Login Successful:", data.message);
+      setToken(data.token);
+      messageApi.success("Login Successful!");
+      if (data.role === "admin") {
+        navigate("/admin");
+        setAdmin(true);
+      } else {
+        navigate("/");
+      }
 
-     
       setLoading(false);
     },
     onError: (error) => {
-      api.error({
-        message: "Login failed",
-        description: error || "Invalid credentials",
-        duration: 5,
-        showProgress: true,
-      });
+      messageApi.error(`Login Failed: ${error}`);
       setLoading(false);
     },
   });
 
-  const onFinish = async (values: LoginFormValues) => {};
+  const onFinish = async (values: LoginFormValues) => {
+    console.log("Login Form Values:", values);
+    loginMutation.mutate(values);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex">
       {/* Left Side - Image Section */}
+      {contextHolder}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-800 relative">
         <div className="flex flex-col justify-center items-center p-12 text-white">
           {/* Decorative Image/Illustration */}
@@ -151,7 +163,7 @@ const Login = () => {
               size="large"
             >
               <Form.Item
-                name="aadharCardNumber"
+                name="citizenship_no"
                 label={
                   <span className="text-gray-700 font-semibold">
                     Nagarikta Number
@@ -161,10 +173,6 @@ const Login = () => {
                   {
                     required: true,
                     message: "Please input your Nagarikta Number!",
-                  },
-                  {
-                    pattern: /^\d{12}$/,
-                    message: "Nagarikta Number must be 12 digits!",
                   },
                 ]}
               >
@@ -197,9 +205,6 @@ const Login = () => {
               </Form.Item>
 
               <div className="flex items-center justify-between mb-6">
-                <Form.Item name="remember" valuePropName="checked" noStyle>
-                  <Checkbox className="text-gray-600">Remember me</Checkbox>
-                </Form.Item>
                 <Link
                   to="/forgot-password"
                   className="text-blue-500 hover:text-blue-700 text-sm font-medium transition-colors"

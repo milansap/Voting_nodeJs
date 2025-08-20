@@ -35,9 +35,9 @@ router.post("/signup", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-    const { citizanship_no, password } = req.body;
+    const { citizenship_no, password } = req.body;
 
-    const user = await User.findOne({ citizenship_no: citizanship_no });
+    const user = await User.findOne({ citizenship_no: citizenship_no });
 
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -48,7 +48,7 @@ router.post("/login", async (req, res) => {
     };
 
     const token = generateToken(payload);
-    res.json({ token, message: "login successful" });
+    res.json({ token, message: "login successful", role: user.role });
   } catch (err) {
     console.error("Error creating user", err);
     res.status(500).json({ error: "Internal server error" });

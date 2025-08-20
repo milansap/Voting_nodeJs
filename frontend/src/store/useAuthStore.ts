@@ -10,7 +10,7 @@ const useAuthStore = create((set) => ({
   isLoggedIn: isLoggedIn,
   isAdmin: initAdmin, 
   
-  setToken: (token) => {
+  setToken: (token:string) => {
     if (token) {
       Cookies.set("token", token);
       set({ token: token, isLoggedIn: true });
@@ -20,7 +20,7 @@ const useAuthStore = create((set) => ({
     }
   },
   
-  setAdmin: (isAdmin) => {
+  setAdmin: (isAdmin:boolean) => {
     Cookies.set("admin", isAdmin.toString()); 
     set({ isAdmin: isAdmin });
   },
