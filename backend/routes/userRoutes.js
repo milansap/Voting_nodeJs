@@ -17,8 +17,6 @@ router.post("/signup", async (req, res) => {
 
     const response = await newUser.save();
 
-    console.log("User created successfully", response);
-
     const payload = {
       userId: response.id,
     };
