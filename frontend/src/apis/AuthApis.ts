@@ -16,6 +16,8 @@ export interface RegisterFormValues {
   confirmPassword: string;
 }
 
+console.log(authService);
+
 export async function login(data: LoginFormValues) {
   const response = await authService.post("login", data, {
     headers: { "Content-Type": "application/json" },
@@ -24,7 +26,7 @@ export async function login(data: LoginFormValues) {
 }
 
 export async function register(data: RegisterFormValues) {
-  const response = await authService.post("register", data, {
+  const response = await authService.post("signup", data, {
     headers: { "Content-Type": "application/json" },
   });
   return response;
