@@ -33,7 +33,7 @@ router.get("/", async (req, res) => {
       })),
       votesCount: candidate.votes.length,
     }));
-    res.status(200).json({ records });
+    res.status(200).json( records );
   } catch (err) {
     console.error("Error fetching candidates", err);
     res.status(500).json({ error: "Internal server error" });

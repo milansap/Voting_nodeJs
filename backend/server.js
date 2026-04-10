@@ -11,7 +11,7 @@ app.use(cors());
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 
-const PORT = 3000;
+const PORT = 3001;
 
 app.get("/", (req, res) => {
   res.send("Server is running...");
