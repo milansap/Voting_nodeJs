@@ -17,11 +17,9 @@ app.get("/", (req, res) => {
   res.send("Server is running...");
 });
 
-//import the router files
 const userRoutes = require("./routes/userRoutes");
 const candidateRoutes = require("./routes/candidateRoutes");
 
-//use the routes
 app.use("/api/", userRoutes);
 app.use("/api/candidates", candidateRoutes);
 

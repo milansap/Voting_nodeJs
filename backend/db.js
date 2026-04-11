@@ -6,8 +6,9 @@ const mongoURL =
   process.env.MONGO_URI;
 
 mongoose.connect(mongoURL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+  tls: true,
+  tlsAllowInvalidCertificates: false,
+  serverSelectionTimeoutMS: 10000,
 });
 
 const db = mongoose.connection;
