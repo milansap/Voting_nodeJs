@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
-import "./globals.css";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import { Toaster } from "@/components/ui/sonner";
-import { QueryClient } from "@tanstack/react-query";
-import { QueryProvider } from "@/lib/QueryProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +25,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const queryClient = new QueryClient();
   return (
     <html
       lang="en"
@@ -34,12 +32,9 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <QueryProvider>
-          <ThemeProvider>
-            <div className="flex-1  ">{children}</div>
-            <Toaster />
-          </ThemeProvider>
-        </QueryProvider>
+        <Header /> 
+        <div className="flex-1 ">{children}</div>
+        <Footer />
       </body>
     </html>
   );

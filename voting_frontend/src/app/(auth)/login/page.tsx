@@ -2,16 +2,25 @@
 
 import { Card } from "@/components/ui/card";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
+import { useMutation } from "@tanstack/react-query";
+import { login } from "@/app/_apis/authApis";
+import { toast } from "sonner";
 
 export default function LoginPage() {
+  const loginMutation = useMutation({
+    mutationKey: ["login"],
+    mutationFn: login,
+    onSuccess: (data) => {
+      toast.success("Login successful!");
+    },
+    onError: (error) => {
+      console.error("Login failed:", error);
+    },
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] to-[#D1FAE5] dark:from-[#111827] dark:to-[#065F46] flex items-center justify-center p-4">
-      {/* Theme Toggle */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
       <div className="w-full max-w-4xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Left Section - Welcome Message */}
@@ -23,7 +32,9 @@ export default function LoginPage() {
                 heard
               </p>
               <div className="pt-4">
-                <p className="text-sm text-[#D1FAE5]">Don&apos;t have an account?</p>
+                <p className="text-sm text-[#D1FAE5]">
+                  Don&apos;t have an account?
+                </p>
                 <Link
                   href="/signup"
                   className="text-white font-semibold hover:text-[#D1FAE5] transition-colors inline-block mt-2"
@@ -37,14 +48,15 @@ export default function LoginPage() {
           {/* Right Section - Login Form */}
           <Card className="w-full shadow-xl border-0 bg-white dark:bg-[#1F2937]">
             <div className="p-8 md:p-10">
-              <h2 className="text-3xl font-bold text-[#111827] dark:text-white mb-2">Sign In</h2>
+              <h2 className="text-3xl font-bold text-[#111827] dark:text-white mb-2">
+                Sign In
+              </h2>
               <p className="text-[#6B7280] dark:text-[#D1D5DB] text-sm mb-8">
                 Enter your details to access your account
               </p>
 
-              <LoginForm />
+              <LoginForm loginMutation={loginMutation} />
 
-              {/* Forgot Password Link */}
               <div className="flex justify-center mt-4">
                 <Link
                   href="/forgot-password"
@@ -57,7 +69,9 @@ export default function LoginPage() {
               {/* Divider */}
               <div className="my-8 flex items-center">
                 <div className="flex-1 border-t border-[#E5E7EB] dark:border-[#4B5563]"></div>
-                <span className="px-3 text-sm text-[#6B7280] dark:text-[#9CA3AF]">or</span>
+                <span className="px-3 text-sm text-[#6B7280] dark:text-[#9CA3AF]">
+                  or
+                </span>
                 <div className="flex-1 border-t border-[#E5E7EB] dark:border-[#4B5563]"></div>
               </div>
 

@@ -1,43 +1,38 @@
-'use client'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { loginSchema, type LoginSchema } from '@/lib/zodSchema'
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, FormProvider } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, type LoginSchema } from "@/lib/zodSchema";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+  FormProvider,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
-export function LoginForm() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+export function LoginForm({ loginMutation }: { loginMutation: any }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { citizenship_no: '', password: '' },
-  })
+    defaultValues: { citizenship_no: 0, password: "" },
+  });
 
-  const onSubmit = async (values: LoginSchema) => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
-      })
-
-      if (!response.ok) throw new Error('Login failed')
-
-      const result = await response.json()
-      console.log('Login successful:', result)
-      // Handle redirect or token storage here
-    } catch (error) {
-      console.error('Login error:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const onSubmit = async (values: {
+    citizenship_no: number;
+    password: string;
+  }) => {
+    loginMutation.mutate(values);
+  };
 
   return (
     <FormProvider {...form}>
@@ -79,7 +74,7 @@ export function LoginForm() {
                   <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" />
                   <Input
                     {...field}
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     className={`pl-10 pr-12 ${
                       fieldState?.error ? "border-red-500 bg-red-50" : ""
@@ -109,9 +104,9 @@ export function LoginForm() {
           disabled={isLoading}
           className="w-full bg-[#059669] hover:bg-[#047857] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white font-semibold py-2.5 rounded-lg transition-all duration-200"
         >
-          {isLoading ? 'Signing in...' : 'Sign In'}
+          {isLoading ? "Signing in..." : "Sign In"}
         </Button>
       </form>
     </FormProvider>
-  )
+  );
 }

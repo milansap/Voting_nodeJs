@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -26,47 +27,17 @@ import {
   FileText,
 } from "lucide-react";
 
-export function SignupForm() {
+export function SignupForm({ signupMutation,form }: { signupMutation: any; form: any }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<SignupSchema>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      name: "",
-      age: undefined,
-      email: "",
-      mobile_number: "",
-      address: "",
-      citizenship_no: undefined,
-      password: "",
-      confirmPassword: "",
-    },
-  });
+  
 
   const onSubmit = async (values: SignupSchema) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: values.name,
-          age: values.age,
-          email: values.email || undefined,
-          mobile_number: values.mobile_number,
-          address: values.address || undefined,
-          citizenship_no: values.citizenship_no,
-          password: values.password,
-        }),
-      });
-
-      if (!response.ok) throw new Error("Signup failed");
-
-      const result = await response.json();
-      console.log("Signup successful:", result);
-      // Handle redirect or token storage here
+      signupMutation.mutate(values);
     } catch (error) {
       console.error("Signup error:", error);
     } finally {

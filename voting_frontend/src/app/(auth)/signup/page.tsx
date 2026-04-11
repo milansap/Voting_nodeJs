@@ -2,16 +2,45 @@
 
 import { Card } from "@/components/ui/card";
 import { SignupForm } from "@/components/auth/SignupForm";
-import { ThemeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { signup } from "@/app/_apis/authApis";
+import { useRouter } from "next/navigation";
+import { SignupSchema, signupSchema } from "@/lib/zodSchema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export default function SignupPage() {
+  const router = useRouter();
+  const form = useForm<SignupSchema>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: "",
+      age: undefined,
+      email: "",
+      mobile_number: "",
+      address: "",
+      citizenship_no: undefined,
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const signupMutation = useMutation({
+    mutationKey: ["signup"],
+    mutationFn: signup,
+    onSuccess: (data) => {
+      toast.success(data.message || "Signup successful!");
+      router.push("/login");
+      form.reset();
+    },
+    onError: (error) => {
+      console.error("Signup failed:", error);
+    },
+  });
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] to-[#D1FAE5] dark:from-[#111827] dark:to-[#065F46] flex items-center justify-center p-4">
-      {/* Theme Toggle */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle />
-      </div>
       <div className="w-full max-w-4xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Left Section - Welcome Message */}
@@ -46,7 +75,7 @@ export default function SignupPage() {
                 Fill in your details to get started
               </p>
 
-              <SignupForm />
+              <SignupForm signupMutation={signupMutation} form={form} />
 
               {/* Divider */}
               <div className="my-6 flex items-center">

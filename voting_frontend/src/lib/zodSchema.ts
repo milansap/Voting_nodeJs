@@ -2,14 +2,14 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  citizenship_no: z.string().email("Please enter a valid email address"),
+  citizenship_no: z.coerce.number().int().min(5, "Citizenship number is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export const signupSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
-    age: z.number().int().min(1, "Age must be a valid number"),
+    age: z.coerce.number().int().min(1, "Age must be a valid number"),
     email: z
       .string()
       .email("Please enter a valid email address")
@@ -19,7 +19,7 @@ export const signupSchema = z
       .string()
       .regex(/^[0-9]{10}$/, "Mobile number must be 10 digits"),
     address: z.string().optional().or(z.literal("")),
-    citizenship_no: z.number().int().min(1, "Citizenship number is required"),
+    citizenship_no: z.coerce.number().int().min(1, "Citizenship number is required"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
