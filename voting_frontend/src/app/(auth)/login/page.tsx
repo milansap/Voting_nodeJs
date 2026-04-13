@@ -6,18 +6,32 @@ import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
 import { login } from "@/app/_apis/authApis";
 import { toast } from "sonner";
+import { useAuthStore } from "@/lib/authStore";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  const { setToken,isLoggedIn } = useAuthStore();
   const loginMutation = useMutation({
     mutationKey: ["login"],
     mutationFn: login,
     onSuccess: (data) => {
+      setToken(data?.token);
+      router.push("/");
       toast.success("Login successful!");
     },
     onError: (error) => {
       console.error("Login failed:", error);
     },
   });
+
+    useEffect(() => {
+    if (isLoggedIn) {
+      router.push("/");
+    }
+  }, [isLoggedIn, router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F9FAFB] to-[#D1FAE5] dark:from-[#111827] dark:to-[#065F46] flex items-center justify-center p-4">

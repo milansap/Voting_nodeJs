@@ -24,11 +24,11 @@ export function LoginForm({ loginMutation }: { loginMutation: any }) {
 
   const form = useForm<LoginSchema>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { citizenship_no: 0, password: "" },
+    defaultValues: { citizenship_no: undefined, password: "" },
   });
 
   const onSubmit = async (values: {
-    citizenship_no: number;
+    citizenship_no: number | undefined;
     password: string;
   }) => {
     loginMutation.mutate(values);
@@ -86,9 +86,9 @@ export function LoginForm({ loginMutation }: { loginMutation: any }) {
                     className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
                       <Eye className="w-5 h-5" />
+                    ) : (
+                      <EyeOff className="w-5 h-5" />
                     )}
                   </button>
                 </div>

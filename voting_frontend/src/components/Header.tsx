@@ -4,13 +4,23 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { LogOut, CheckSquare, Sun, Moon, Menu, X } from "lucide-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/lib/useThemeContext";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/authStore";
 
@@ -103,7 +113,7 @@ const Header = () => {
               <ThemeToggle />
 
               {/* Desktop Auth Buttons */}
-              <div className="hidden md:flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-3 cursor-pointer">
                 {isLoggedIn ? (
                   <>
                     {isAdmin && (
@@ -111,12 +121,29 @@ const Header = () => {
                         Admin
                       </span>
                     )}
-                    <button
-                      onClick={handleLogout}
-                      className="px-4 py-2 text-white dark:text-[#D1FAE5] text-sm font-medium hover:bg-white/20 rounded-full transition-colors"
-                    >
-                      Logout
-                    </button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Avatar>
+                          <AvatarImage
+                            src="https://github.com/shadcn.png"
+                            alt="@shadcn"
+                            className="grayscale"
+                          />
+                          <AvatarFallback>CN</AvatarFallback>
+                        </Avatar>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuGroup>
+                          <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={()=>router.push("/profile")}>Profile</DropdownMenuItem>
+                          <DropdownMenuItem>Billing</DropdownMenuItem>
+                          <DropdownMenuItem>Settings</DropdownMenuItem>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+                       
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </>
                 ) : (
                   <>
@@ -139,7 +166,7 @@ const Header = () => {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="md:hidden p-2 text-white dark:text-[#D1FAE5] hover:bg-white/20 rounded-lg transition-colors"
+                className="md:hidden cursor-pointer p-2 text-white dark:text-[#D1FAE5] hover:bg-white/20 rounded-lg transition-colors"
                 aria-label="Toggle menu"
               >
                 {mobileOpen ? (
