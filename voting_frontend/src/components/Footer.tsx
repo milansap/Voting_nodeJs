@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart2, Icon, ShieldCheck} from "lucide-react";
+import { BarChart2, Icon, ShieldCheck } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,9 +45,9 @@ const NAV_COLS: NavCol[] = [
 ];
 
 const SOCIAL_LINKS = [
-  { label: "Twitter", href: "https://twitter.com",  },
-  { label: "LinkedIn", href: "https://linkedin.com", },
-  { label: "Facebook", href: "https://facebook.com",  },
+  { label: "Twitter", href: "https://twitter.com" },
+  { label: "LinkedIn", href: "https://linkedin.com" },
+  { label: "Facebook", href: "https://facebook.com" },
 ];
 
 const LEGAL_LINKS: NavLink[] = [
@@ -67,11 +67,9 @@ export default function Footer() {
           {/* Brand */}
           <div className="flex flex-col gap-4">
             <Link href="/" className="flex w-fit items-center gap-2.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-600">
-                <BarChart2 className="h-4 w-4 text-white" strokeWidth={2} />
-              </span>
+             
               <span className="text-base font-semibold tracking-tight text-foreground">
-                VoteFlow
+                VoteHub{" "}
               </span>
             </Link>
 
