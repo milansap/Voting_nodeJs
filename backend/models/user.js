@@ -1,47 +1,28 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
+const userSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    age: { type: Number, required: true },
+    email: { type: String, match: /.+\@.+\..+/ },
+    mobile_number: { type: String, required: true },
+    address: { type: String },
+    citizenship_no: { type: Number, required: true, unique: true },
+    password: { type: String, required: true },
+    role: {
+      type: String,
+      enum: ["voter", "admin"],
+      default: "voter",
+    },
+    isVoted: { type: Boolean, default: false },
+    image: {
+      type: String,
+      default: "/uploads/profile/default.png",
+    },
   },
-  age: {
-    type: Number,
-    required: true,
-  },
-  email: {
-    type: String,
-  },
-  mobile_number: {
-    type: String,
-    required: true,
-  },
-  address: {
-    type: String,
-  },
-  citizenship_no: {
-    type: Number,
-    required: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-  },
-  role: {
-    type: String,
-    enum: ["voter", "admin"],
-    default: "voter",
-  },
-  isVoted: {
-    type: Boolean,
-    default: false,
-  },
-  image: {
-    type: String,
-  },
-});
+  { timestamps: true },
+);
 
 userSchema.pre("save", async function (next) {
   const user = this;
