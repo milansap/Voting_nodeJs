@@ -91,4 +91,30 @@ router.put("/profile/password", jwtAuthMiddleware, async (req, res) => {
   }
 });
 
+router.put("/profile", jwtAuthMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, email, mobile_number, address, image,citizenship_no } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    user.image = image || user.image;
+    user.name = name || user.name;
+    user.email = email || user.email;
+    user.mobile_number = mobile_number || user.mobile_number;
+    user.address = address || user.address;
+    user.citizenship_no= citizenship_no || user.citizenship_no;
+
+
+    await user.save();
+
+    res.status(200).json({ message: "Profile updated successfully", user });
+  } catch (err) {
+    console.error("Error updating profile", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;
