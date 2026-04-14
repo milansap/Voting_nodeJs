@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,38 +9,36 @@ import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
   ShieldCheck,
   Vote,
   CheckCircle2,
   Clock,
   Lock,
-  Star,
   TrendingUp,
-  Calendar,
   ChevronRight,
   Award,
   Eye,
   Users,
-  Globe,
   Fingerprint,
   Settings,
   Smartphone,
   Mail,
+  Camera,
+  Loader2,
 } from "lucide-react";
+import { getProfile, updateProfilePicture } from "@/app/_apis/routes/user";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
-
-const USER = {
-  name: "Arjun Mehta",
-  handle: "@arjun.mehta",
-  role: "Verified Voter",
-  joined: "March 2023",
-  avatar: "AM",
-  country: "India",
-  verified: true,
-  trustScore: 98,
-  badges: ["Early adopter", "Power voter", "Civic champion"],
-};
 
 const STATS = [
   { icon: Vote, label: "Total votes cast", value: "47" },
@@ -186,21 +184,116 @@ function TrustScore({ score }: { score: number }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
+  const queryClient = useQueryClient();
+
+  const { data: userData } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
+  });
+
+  const user = userData?.user;
+
+  console.log("User data:", user);
+
   const [tab, setTab] = useState("overview");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [editFormData, setEditFormData] = useState({
+    name: user?.name || "",
+    email: user?.email || "",
+    country: user?.country || "",
+  });
+
+  // Mutation for uploading profile picture
+  const uploadProfilePictureMutation = useMutation({
+    mutationFn: updateProfilePicture,
+
+    onSuccess: () => {
+      // Invalidate profile query to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast.success("Profile picture updated successfully!");
+      setUploadingImage(false);
+    },
+    onError: (error: Error | null) => {
+      toast.error(error);
+      setUploadingImage(false);
+    },
+  });
+
+  const handleEditProfileClick = () => {
+    setEditFormData({
+      name: user?.name || "",
+      email: user?.email || "",
+      country: user?.country || "",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSaveProfile = () => {
+    // TODO: Implement API call to save profile
+    console.log("Saving profile:", editFormData);
+    setIsEditDialogOpen(false);
+  };
+
+  const handleAvatarClick = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleImageChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith("image/")) {
+          toast.error("Please select a valid image file");
+          return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("File size should not exceed 5MB");
+          return;
+        }
+
+        setUploadingImage(true);
+        const formData = new FormData();
+        formData.append("id", user?._id);
+        formData.append("image", file);
+
+        uploadProfilePictureMutation.mutate(formData);
+      }
+
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [uploadProfilePictureMutation, user?._id],
+  );
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans antialiased">
-
       {/* ── Hero banner ──────────────────────────────────────────────────── */}
       <div className="relative h-52 overflow-hidden bg-zinc-900 dark:bg-zinc-950">
         {/* Emerald gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-800 to-zinc-900 opacity-90" />
+        <div className="absolute inset-0 bg-linear-to-br from-emerald-700 via-emerald-800 to-zinc-900 opacity-90" />
 
         {/* Dot grid texture */}
         <div
           className="absolute inset-0 opacity-[0.06]"
           style={{
-            backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
+            backgroundImage:
+              "radial-gradient(circle, #fff 1px, transparent 1px)",
             backgroundSize: "28px 28px",
           }}
         />
@@ -224,44 +317,76 @@ export default function ProfilePage() {
       </div>
 
       <div className="mx-auto max-w-5xl px-5">
-
         {/* ── Profile header ───────────────────────────────────────────── */}
         <div className="relative -mt-14 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-end gap-4">
             {/* Avatar */}
-            <div className="relative shrink-0">
-              <Avatar className="h-[88px] w-[88px] border-[3px] border-zinc-50 dark:border-zinc-950 shadow-lg">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-emerald-600 dark:bg-emerald-700 text-[22px] font-bold text-white">
-                  {USER.avatar}
-                </AvatarFallback>
-              </Avatar>
-              {USER.verified && (
-                <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center
-                                 rounded-full border-2 border-zinc-50 dark:border-zinc-950 bg-emerald-500">
+            <div className="relative shrink-0 group">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                aria-label="Upload profile image"
+                disabled={uploadingImage}
+              />
+
+              <button
+                onClick={handleAvatarClick}
+                disabled={uploadingImage}
+                className="relative cursor-pointer transition-transform duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
+              >
+                <Avatar className="h-22 w-22 border-[3px] border-zinc-50 dark:border-zinc-950 shadow-lg">
+                  <AvatarImage src={user?.image} alt="Profile picture" />
+                  <AvatarFallback className="bg-emerald-600 dark:bg-emerald-700 text-[22px] font-bold text-white">
+                    {user?.name
+                      ?.split(" ")
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      .map((n: any) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+
+                {/* Overlay with camera icon or loader */}
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                  {uploadingImage ? (
+                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="h-5 w-5 text-white" />
+                  )}
+                </div>
+              </button>
+
+              {user?.verified && (
+                <span
+                  className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center
+                                 rounded-full border-2 border-zinc-50 dark:border-zinc-950 bg-emerald-500"
+                >
                   <ShieldCheck className="h-3 w-3 text-white" />
                 </span>
               )}
             </div>
 
             {/* Meta */}
-           
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-[22px] font-bold tracking-tight text-zinc-900 dark:text-white">
-                  {USER.name}
-                </h1>
-                <Badge className="bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400
-                                  border border-emerald-200 dark:border-emerald-500/25 text-[11px] font-medium px-2.5">
-                  {USER.role}
-                </Badge>
-              </div>
 
-             
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-[22px] font-bold tracking-tight text-zinc-900 dark:text-white">
+                {user?.name}
+              </h1>
+              <Badge
+                className="bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400
+                                  border border-emerald-200 dark:border-emerald-500/25 text-[11px] font-medium px-2.5"
+              >
+                {user?.role}
+              </Badge>
             </div>
-      
+          </div>
 
           <div className="flex gap-2 ">
             <Button
+              onClick={handleEditProfileClick}
               variant="outline"
               size="sm"
               className="border-zinc-200 dark:border-white/10 bg-white dark:bg-white/5
@@ -292,8 +417,10 @@ export default function ProfilePage() {
                          transition-colors shadow-none group"
             >
               <CardContent className="p-4 flex flex-col gap-2">
-                <div className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10
-                                flex items-center justify-center">
+                <div
+                  className="h-8 w-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10
+                                flex items-center justify-center"
+                >
                   <s.icon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
                 <span className="text-2xl font-bold text-zinc-900 dark:text-white">
@@ -332,7 +459,6 @@ export default function ProfilePage() {
           {/* ── Overview ────────────────────────────────────────────── */}
           <TabsContent value="overview" className="mt-6">
             <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
-
               {/* Active elections */}
               <div className="flex flex-col gap-3">
                 <h2 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
@@ -353,16 +479,22 @@ export default function ProfilePage() {
                         <p className="text-[12px] text-zinc-500">{el.org}</p>
                         <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           <Clock className="h-3 w-3 text-zinc-400" />
-                          <span className="text-[12px] text-zinc-500">{el.deadline}</span>
+                          <span className="text-[12px] text-zinc-500">
+                            {el.deadline}
+                          </span>
                           {el.daysLeft <= 5 && !el.voted && (
-                            <Badge className="bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400
-                                              border border-red-200 dark:border-red-500/25 text-[10px] px-2 font-medium">
+                            <Badge
+                              className="bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400
+                                              border border-red-200 dark:border-red-500/25 text-[10px] px-2 font-medium"
+                            >
                               {el.daysLeft}d left
                             </Badge>
                           )}
                           {el.voted && (
-                            <Badge className="bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400
-                                              border border-emerald-200 dark:border-emerald-500/25 text-[10px] px-2 font-medium">
+                            <Badge
+                              className="bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400
+                                              border border-emerald-200 dark:border-emerald-500/25 text-[10px] px-2 font-medium"
+                            >
                               <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
                               Voted
                             </Badge>
@@ -390,7 +522,7 @@ export default function ProfilePage() {
                 <h2 className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
                   Trust &amp; security
                 </h2>
-                <TrustScore score={USER.trustScore} />
+                <TrustScore score={user?.trustScore} />
 
                 <Card className="border-zinc-200 dark:border-white/8 bg-white dark:bg-white/4 shadow-none">
                   <CardContent className="p-5 flex flex-col gap-1">
@@ -455,11 +587,15 @@ export default function ProfilePage() {
                         <p className="text-[13px] font-medium text-zinc-900 dark:text-white">
                           {v.title}
                         </p>
-                        <p className="text-[11px] text-zinc-500 mt-0.5">{v.org}</p>
+                        <p className="text-[11px] text-zinc-500 mt-0.5">
+                          {v.org}
+                        </p>
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1.5">
-                      <Badge className={`text-[10px] px-2 ${resultStyles(v.result)}`}>
+                      <Badge
+                        className={`text-[10px] px-2 ${resultStyles(v.result)}`}
+                      >
                         {v.result}
                       </Badge>
                       <span className="text-[11px] text-zinc-400 dark:text-zinc-600">
@@ -502,6 +638,88 @@ export default function ProfilePage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* ── Edit Profile Dialog ──────────────────────────────────── */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-md border-zinc-200 dark:border-white/8 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold">
+                Edit Profile
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="flex flex-col gap-4 py-4">
+              {/* Name Field */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Full Name
+                </label>
+                <Input
+                  type="text"
+                  name="name"
+                  value={editFormData.name}
+                  onChange={handleEditFormChange}
+                  placeholder="Enter your full name"
+                  className="border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5
+                             text-zinc-900 dark:text-white placeholder:text-zinc-400
+                             dark:placeholder:text-zinc-600"
+                />
+              </div>
+
+              {/* Email Field */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Email Address
+                </label>
+                <Input
+                  type="email"
+                  name="email"
+                  value={editFormData.email}
+                  onChange={handleEditFormChange}
+                  placeholder="Enter your email address"
+                  className="border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5
+                             text-zinc-900 dark:text-white placeholder:text-zinc-400
+                             dark:placeholder:text-zinc-600"
+                />
+              </div>
+
+              {/* Country Field */}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  Country
+                </label>
+                <Input
+                  type="text"
+                  name="country"
+                  value={editFormData.country}
+                  onChange={handleEditFormChange}
+                  placeholder="Enter your country"
+                  className="border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5
+                             text-zinc-900 dark:text-white placeholder:text-zinc-400
+                             dark:placeholder:text-zinc-600"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setIsEditDialogOpen(false)}
+                className="border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-zinc-300
+                           hover:bg-zinc-50 dark:hover:bg-white/5 shadow-none"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveProfile}
+                className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 
+                           dark:hover:bg-emerald-600 text-white shadow-none"
+              >
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="h-16" />
       </div>

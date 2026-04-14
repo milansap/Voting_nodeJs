@@ -29,7 +29,9 @@ import { getProfile } from "@/app/_apis/routes/user";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
+  { href: "/events", label: "Events" },
   { href: "/candidates", label: "Candidates" },
+
 ];
 
 function ThemeToggle() {
