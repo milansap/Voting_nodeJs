@@ -143,9 +143,8 @@ router.put(
       const paramId = req.params.id;
       const authId = req.user.id;
 
-      // 🔒 Check authorization
       if (paramId !== authId) {
-        if (req.file) fs.unlinkSync(req.file.path); // cleanup uploaded file
+        if (req.file) fs.unlinkSync(req.file.path); 
         return res.status(403).json({
           message: "Unauthorized to update this profile",
         });
