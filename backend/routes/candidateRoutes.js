@@ -2,8 +2,13 @@ const express = require("express");
 const router = express.Router();
 const Candidate = require("../models/candidates");
 const User = require("../models/user");
+const Events = require("../models/events");
+const fs = require("fs");
+const path = require("path");
+const multer = require("multer");
 
 const { jwtAuthMiddleware } = require("../jwt");
+const { createUpload } = require("../uploadMiddleware");
 
 const checkAdminRole = async (userId) => {
   try {
@@ -17,6 +22,8 @@ const checkAdminRole = async (userId) => {
   }
 };
 
+const uploadCandidate = createUpload("candidates");
+
 //apis for the candidates
 
 router.get("/", async (req, res) => {
@@ -26,6 +33,8 @@ router.get("/", async (req, res) => {
       id: candidate._id,
       name: candidate.name,
       party: candidate.party,
+      image: candidate.image,
+      position: candidate.position,
       voteCount: candidate.voteCount,
       votes: candidate.votes.map((vote) => ({
         user: vote.user,
@@ -33,61 +42,133 @@ router.get("/", async (req, res) => {
       })),
       votesCount: candidate.votes.length,
     }));
-    res.status(200).json( records );
+    res.status(200).json(records);
   } catch (err) {
     console.error("Error fetching candidates", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Failed to fetch candidates" });
   }
 });
 
-router.post("/", jwtAuthMiddleware, async (req, res) => {
-  console.log("Creating candidate:", req.body);
-  try {
-    if (!req.user || !(await checkAdminRole(req.user.id))) {
-      return res.status(403).json({ message: "Forbidden: Admins only" });
+router.post(
+  "/",
+  jwtAuthMiddleware,
+  uploadCandidate.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.user || !(await checkAdminRole(req.user.id))) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(403).json({ message: "Forbidden: Admins only" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          message: "Image file is required",
+        });
+      }
+
+      const data = req.body;
+      const candidates = await Candidate.find();
+      const isDuplicate = candidates.some(
+        (candidate) =>
+          candidate.party === data.party &&
+          candidate.position === data.position,
+      );
+      if (isDuplicate) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res
+          .status(400)
+          .json({ message: "Candidate for this position already exists" });
+      }
+
+      const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
+      const imagePath = `${BASE_URL}/uploads/candidates/${req.file.filename}`;
+      const candidate = new Candidate(data);
+      candidate.image = imagePath;
+      const response = await candidate.save();
+
+      res.status(201).json({
+        response: response,
+        message: "Candidate created successfully",
+      });
+    } catch (err) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      console.error("Error creating candidate", err);
+      res.status(500).json({ error: "Failed to create candidate" });
     }
-    const data = req.body;
+  },
+);
 
-    const newCandidate = new Candidate(data);
+router.put(
+  "/:candidateId",
+  jwtAuthMiddleware,
+  uploadCandidate.single("image"),
+  async (req, res) => {
+    try {
+      if (!req.user || !(await checkAdminRole(req.user.id))) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(403).json({ message: "Forbidden: Admins only" });
+      }
 
-    const response = await newCandidate.save();
+      const candidateId = req.params.candidateId;
+      const updatedCandidateData = req.body;
 
-    res.status(200).json({
-      response: response,
-    });
-  } catch (err) {
-    console.error("Error creating user", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+      const candidate = await Candidate.findById(candidateId);
+      if (!candidate) {
+        if (req.file && fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+        }
+        return res.status(404).json({
+          message: "Candidate not found",
+        });
+      }
 
-router.put("/:candidateId", jwtAuthMiddleware, async (req, res) => {
-  try {
-    if (!req.user || !(await checkAdminRole(req.user.id))) {
-      return res.status(403).json({ message: "Forbidden: Admins only" });
+      // Update image if file is uploaded
+      if (req.file) {
+        if (candidate.image) {
+          const relativePath = candidate.image.replace(
+            `${process.env.BASE_URL}/`,
+            "",
+          );
+          const oldPath = path.join(__dirname, "..", relativePath);
+          if (fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+          }
+        }
+        const BASE_URL = process.env.BASE_URL || "http://localhost:3001";
+        updatedCandidateData.image = `${BASE_URL}/uploads/candidates/${req.file.filename}`;
+      }
+
+      const response = await Candidate.findByIdAndUpdate(
+        candidateId,
+        updatedCandidateData,
+        { new: true, runValidators: true },
+      );
+
+      if (!response) {
+        return res.status(404).json({ message: "Candidate not found" });
+      }
+
+      res.status(200).json({
+        response: response,
+        message: "Candidate updated successfully",
+      });
+    } catch (err) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      console.error("Error updating candidate", err);
+      res.status(500).json({ error: "Failed to update candidate" });
     }
-    const candidateId = req.params.candidateId;
-
-    const updatedCandidateData = req.body;
-
-    const response = await Candidate.findByIdAndUpdate(
-      candidateId,
-      updatedCandidateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!response) {
-      return res.status(404).json({ message: "Candidate not found" });
-    }
-
-    res
-      .status(200)
-      .json({ response: response, message: "Candidate updated successfully" });
-  } catch (err) {
-    console.error("Error creating user", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+  },
+);
 
 router.delete("/:candidateId", jwtAuthMiddleware, async (req, res) => {
   try {
@@ -102,23 +183,29 @@ router.delete("/:candidateId", jwtAuthMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Candidate not found" });
     }
 
-    res
-      .status(200)
-      .json({ response: response, message: "Candidate deleted successfully" });
+    res.status(200).json({
+      response: response,
+      message: "Candidate deleted successfully",
+    });
   } catch (err) {
     console.error("Error deleting candidate", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Failed to delete candidate" });
   }
 });
 
 router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
   const candidateId = req.params.candidateId;
   const userId = req.user.id;
+  const eventId = req.body.eventId;
 
   try {
     const candidate = await Candidate.findById(candidateId);
+    const event = await Events.findById(eventId);
     if (!candidate) {
       return res.status(404).json({ message: "Candidate not found" });
+    }
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
     }
     const user = await User.findById(userId);
     if (!user) {
@@ -126,6 +213,12 @@ router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
     }
     if (user.isVoted) {
       return res.status(403).json({ message: "You have already voted" });
+    }
+
+    if (event.status !== "active") {
+      return res
+        .status(403)
+        .json({ message: "Voting is not active for this event" });
     }
     if (user.role === "admin") {
       return res.status(403).json({ message: "Admins cannot vote" });
@@ -143,8 +236,8 @@ router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
       candidate: candidate,
     });
   } catch (err) {
-    console.error("Error fetching candidate", err);
-    return res.status(500).json({ error: "Internal server error" });
+    console.error("Error casting vote", err);
+    return res.status(500).json({ error: "Failed to cast vote" });
   }
 });
 
@@ -161,8 +254,23 @@ router.get("/vote/count", async (req, res) => {
     return res.status(200).json(records);
   } catch (err) {
     console.error("Error fetching vote counts", err);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Failed to fetch vote counts" });
   }
+});
+
+router.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "File size is too large. Maximum size allowed is 5MB",
+      });
+    }
+    return res.status(400).json({ message: err.message });
+  }
+  if (err.message === "Only image files are allowed") {
+    return res.status(400).json({ message: err.message });
+  }
+  next(err);
 });
 
 module.exports = router;

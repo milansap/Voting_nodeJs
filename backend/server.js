@@ -19,8 +19,10 @@ app.get("/", (req, res) => {
 
 const userRoutes = require("./routes/userRoutes");
 const candidateRoutes = require("./routes/candidateRoutes");
+const eventsRoutes = require("./routes/eventsRoutes");
 app.use("/api/", userRoutes);
 app.use("/api/candidates", candidateRoutes);
+app.use("/api/events", eventsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
