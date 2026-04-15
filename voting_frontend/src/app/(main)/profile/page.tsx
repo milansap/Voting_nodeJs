@@ -216,7 +216,7 @@ export default function ProfilePage() {
       setUploadingImage(false);
     },
     onError: (error: Error | null) => {
-      toast.error(error);
+      toast.error(error ? error.message : "Failed to upload profile picture");
       setUploadingImage(false);
     },
   });
