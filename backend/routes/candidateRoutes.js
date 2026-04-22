@@ -28,6 +28,34 @@ const uploadCandidate = createUpload("candidates");
 
 router.get("/", async (req, res) => {
   try {
+    const { eventId } = req.query;
+
+    // If eventId is provided, fetch candidates from that specific event
+    if (eventId) {
+      const event = await Events.findById(eventId).populate("candidates");
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      const records = event.candidates.map((candidate) => ({
+        id: candidate._id,
+        name: candidate.name,
+        party: candidate.party,
+        age: candidate.age,
+        image: candidate.image,
+        position: candidate.position,
+        voteCount: candidate.voteCount,
+        votes: candidate.votes.map((vote) => ({
+          user: vote.user,
+          votedAt: vote.votedAt,
+        })),
+        votesCount: candidate.votes.length,
+      }));
+
+      return res.status(200).json(records);
+    }
+
+    // Otherwise, fetch all candidates
     const candidates = await Candidate.find();
     const records = candidates.map((candidate) => ({
       id: candidate._id,

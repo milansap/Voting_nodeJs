@@ -23,6 +23,12 @@ const candidateSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  events: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Events",
+    },
+  ],
   votes: [
     {
       user: {

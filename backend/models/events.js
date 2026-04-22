@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-// const bcrypt = require('bcryptjs');
+
 
 const eventSchema = new mongoose.Schema({
   title: {
@@ -23,6 +23,13 @@ const eventSchema = new mongoose.Schema({
     enum: ["upcoming", "ongoing", "completed"],
     default: "upcoming",
   },
+  candidates: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Candidates",
+      required: true,
+    },
+  ],
 });
 
 const Events = mongoose.model("Events", eventSchema);
