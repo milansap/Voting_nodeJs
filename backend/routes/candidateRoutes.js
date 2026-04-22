@@ -30,7 +30,6 @@ router.get("/", async (req, res) => {
   try {
     const { eventId } = req.query;
 
-    // If eventId is provided, fetch candidates from that specific event
     if (eventId) {
       const event = await Events.findById(eventId).populate("candidates");
       if (!event) {
@@ -243,7 +242,7 @@ router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
       return res.status(403).json({ message: "You have already voted" });
     }
 
-    if (event.status !== "active") {
+    if (event.status !== "ongoing") {
       return res
         .status(403)
         .json({ message: "Voting is not active for this event" });
