@@ -31,7 +31,7 @@ const EventsPage = () => {
 
   const getStatusConfig = (status: string) => {
     switch (status?.toLowerCase()) {
-      case "active":
+      case "ongoing":
         return {
           label: "Live",
           className:

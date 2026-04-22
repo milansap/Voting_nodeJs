@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { getEventById, type EventRecord } from "@/app/_apis/routes/events";
-import { useQuery } from "@tanstack/react-query";
+import { castVote } from "@/app/_apis/routes/vote";
+import { getProfile } from "@/app/_apis/routes/user";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +29,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { VoteDialog } from "./components/VoteDialog";
+import { toast } from "sonner";
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "TBD";
@@ -80,6 +85,15 @@ const getInitials = (name: string) =>
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const [voteDialogOpen, setVoteDialogOpen] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState<
+    EventRecord["candidates"][0] | null
+  >(null);
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: getProfile,
+  });
+  const hasUserVoted = profile?.user?.isVoted;
 
   const {
     data: event,
@@ -91,6 +105,33 @@ export default function EventDetailPage() {
     queryFn: () => getEventById(id),
     enabled: Boolean(id),
   });
+
+  const castVoteMutation = useMutation({
+    mutationFn: castVote,
+    onSuccess: () => {
+      toast.success("Your vote has been cast successfully!");
+      setVoteDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error);
+      setVoteDialogOpen(false);
+    },
+  });
+
+  const handleVoteNowClick = (candidate: EventRecord["candidates"][0]) => {
+    setSelectedCandidate(candidate);
+    setVoteDialogOpen(true);
+  };
+
+  const handleVoteSubmit = async (candidateId: string) => {
+    try {
+      await castVoteMutation.mutateAsync({ candidateId, eventId: id });
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const userVoteStatus = hasUserVoted || profile?.hasVoted || false;
 
   const errorMessage =
     typeof error === "string" ? error : "Unable to load event details.";
@@ -354,10 +395,11 @@ export default function EventDetailPage() {
                             View Details
                           </Button>
                           <Button
-                            variant="default"
-                            className="mt-5 w-1/2 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
+                            onClick={() => handleVoteNowClick(candidate)}
+                            disabled={userVoteStatus}
+                            className="mt-5 w-1/2 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
                           >
-                            Vote Now!
+                            {userVoteStatus ? "Already Voted" : "Vote Now!"}
                           </Button>
                         </div>
                       </div>
@@ -381,6 +423,15 @@ export default function EventDetailPage() {
             </Button>
           </div>
         </div>
+
+        {/* Vote Dialog */}
+        <VoteDialog
+          isOpen={voteDialogOpen}
+          onClose={() => setVoteDialogOpen(false)}
+          candidate={selectedCandidate}
+          hasVoted={userVoteStatus}
+          onVoteSubmit={handleVoteSubmit}
+        />
       </div>
     </TooltipProvider>
   );
