@@ -4,9 +4,12 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema, type LoginSchema } from "@/lib/zodSchema";
 import {
-  Form,
+  loginSchema,
+  type LoginSchema,
+  type LoginSchemaInput,
+} from "@/lib/zodSchema";
+import {
   FormField,
   FormItem,
   FormLabel,
@@ -20,17 +23,14 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 
 export function LoginForm({ loginMutation }: { loginMutation: any }) {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const isLoading = loginMutation?.isPending ?? false;
 
-  const form = useForm<LoginSchema>({
+  const form = useForm<LoginSchemaInput, unknown, LoginSchema>({
     resolver: zodResolver(loginSchema),
     defaultValues: { citizenship_no: undefined, password: "" },
   });
 
-  const onSubmit = async (values: {
-    citizenship_no: number | undefined;
-    password: string;
-  }) => {
+  const onSubmit = async (values: LoginSchema) => {
     loginMutation.mutate(values);
   };
 
@@ -51,6 +51,12 @@ export function LoginForm({ loginMutation }: { loginMutation: any }) {
                     {...field}
                     type="number"
                     placeholder="Enter your Citizenship No."
+                    value={field.value ?? ""}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value === "" ? undefined : Number(e.target.value),
+                      )
+                    }
                     className={`pl-10 ${
                       fieldState?.error ? "border-red-500 bg-red-50" : ""
                     }`}

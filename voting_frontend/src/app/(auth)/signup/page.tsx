@@ -7,13 +7,17 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { signup } from "@/app/_apis/authApis";
 import { useRouter } from "next/navigation";
-import { SignupSchema, signupSchema } from "@/lib/zodSchema";
+import {
+  type SignupSchema,
+  type SignupSchemaInput,
+  signupSchema,
+} from "@/lib/zodSchema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 export default function SignupPage() {
   const router = useRouter();
-  const form = useForm<SignupSchema>({
+  const form = useForm<SignupSchemaInput, unknown, SignupSchema>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",

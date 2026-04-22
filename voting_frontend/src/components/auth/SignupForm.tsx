@@ -2,11 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { signupSchema, type SignupSchema } from "@/lib/zodSchema";
+import { type SignupSchema } from "@/lib/zodSchema";
 import {
-  Form,
   FormField,
   FormItem,
   FormLabel,
@@ -27,7 +24,7 @@ import {
   FileText,
 } from "lucide-react";
 
-export function SignupForm({ signupMutation,form }: { signupMutation: any; form: any }) {
+export function SignupForm({ signupMutation, form }: { signupMutation: any; form: any }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -88,6 +85,7 @@ export function SignupForm({ signupMutation,form }: { signupMutation: any; form:
                       {...field}
                       type="number"
                       placeholder="12345678"
+                      value={field.value ?? ""}
                       onChange={(e) =>
                         field.onChange(
                           e.target.value ? parseInt(e.target.value) : undefined,
@@ -116,6 +114,7 @@ export function SignupForm({ signupMutation,form }: { signupMutation: any; form:
                     {...field}
                     type="number"
                     placeholder="25"
+                    value={field.value ?? ""}
                     onChange={(e) =>
                       field.onChange(
                         e.target.value ? parseInt(e.target.value) : undefined,
