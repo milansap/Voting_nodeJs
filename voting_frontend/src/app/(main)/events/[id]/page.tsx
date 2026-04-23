@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { getEventById, type EventRecord } from "@/app/_apis/routes/events";
-import { castVote } from "@/app/_apis/routes/vote";
-import { getProfile } from "@/app/_apis/routes/user";
+import { castVote, checkEventVoteStatus } from "@/app/_apis/routes/vote";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +30,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { VoteDialog } from "./components/VoteDialog";
 import { toast } from "sonner";
+import { getProfile } from "@/app/_apis/routes/user";
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "TBD";
@@ -93,7 +93,6 @@ export default function EventDetailPage() {
     queryKey: ["profile"],
     queryFn: getProfile,
   });
-  const hasUserVoted = profile?.user?.isVoted;
 
   const {
     data: event,
@@ -105,6 +104,18 @@ export default function EventDetailPage() {
     queryFn: () => getEventById(id),
     enabled: Boolean(id),
   });
+
+  // Check if user has voted for THIS specific event
+  const {
+    data: voteStatusData,
+    isLoading: isCheckingVoteStatus,
+  } = useQuery({
+    queryKey: ["eventVoteStatus", id],
+    queryFn: () => checkEventVoteStatus(id),
+    enabled: Boolean(id),
+  });
+
+  const userVoteStatus = voteStatusData?.hasVoted || false;
 
   const castVoteMutation = useMutation({
     mutationFn: castVote,
@@ -130,8 +141,6 @@ export default function EventDetailPage() {
       throw error;
     }
   };
-
-  const userVoteStatus = hasUserVoted || profile?.hasVoted || false;
 
   const errorMessage =
     typeof error === "string" ? error : "Unable to load event details.";

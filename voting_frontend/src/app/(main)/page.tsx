@@ -99,49 +99,7 @@ const TESTIMONIALS = [
   },
 ];
 
-const PLANS = [
-  {
-    name: "Starter",
-    price: "$0",
-    period: "forever",
-    desc: "Perfect for small organizations and trial runs.",
-    features: ["Up to 500 voters", "3 elections/month", "Basic analytics", "Email support"],
-    cta: "Get started free",
-    highlight: false,
-  },
-  {
-    name: "Pro",
-    price: "$49",
-    period: "per month",
-    desc: "For organizations running frequent, high-stakes elections.",
-    features: [
-      "Unlimited voters",
-      "Unlimited elections",
-      "Live results dashboard",
-      "Audit logs & export",
-      "Priority support",
-      "Custom branding",
-    ],
-    cta: "Start free trial",
-    highlight: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "contact us",
-    desc: "For governments, large institutions, and regulated industries.",
-    features: [
-      "Everything in Pro",
-      "Dedicated infrastructure",
-      "SSO / SAML",
-      "SLA guarantee",
-      "Onboarding & training",
-      "Legal compliance pack",
-    ],
-    cta: "Talk to sales",
-    highlight: false,
-  },
-];
+
 
 
 // ─── Page ──────────────────────────────────────────────────────────────────────

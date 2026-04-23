@@ -36,6 +36,11 @@ const candidateSchema = new mongoose.Schema({
         ref: "User",
         required: true,
       },
+      event: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Events",
+        required: true,
+      },
       votedAt: {
         type: Date,
         default: Date.now,

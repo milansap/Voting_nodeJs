@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
+const Candidate = require("../models/candidates");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
@@ -181,6 +182,27 @@ router.use((err, req, res, next) => {
     return res.status(400).json({ message: err.message });
   }
   next(err);
+});
+
+router.get("/vote/status/:eventId", jwtAuthMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const eventId = req.params.eventId;
+
+    // Find all candidates for this event and check if user voted for any of them
+    const candidates = await Candidate.find({
+      events: eventId,
+      "votes.user": userId,
+      "votes.event": eventId,
+    });
+
+    const hasVotedForEvent = candidates.length > 0;
+
+    res.status(200).json({ hasVoted: hasVotedForEvent });
+  } catch (err) {
+    console.error("Error checking vote status", err);
+    res.status(500).json({ error: "Failed to check vote status" });
+  }
 });
 
 module.exports = router;

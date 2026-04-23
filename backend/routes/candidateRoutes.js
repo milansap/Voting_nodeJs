@@ -238,8 +238,17 @@ router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (user.isVoted) {
-      return res.status(403).json({ message: "You have already voted" });
+
+    // Check if user has already voted for ANY candidate in THIS event
+    const allCandidatesInEvent = await Candidate.find({ events: eventId });
+    const hasVotedForEvent = allCandidatesInEvent.some((cand) =>
+      cand.votes.some(
+        (vote) => vote.user.toString() === userId && vote.event.toString() === eventId
+      )
+    );
+    
+    if (hasVotedForEvent) {
+      return res.status(403).json({ message: "You have already voted for this event" });
     }
 
     if (event.status !== "ongoing") {
@@ -251,12 +260,9 @@ router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
       return res.status(403).json({ message: "Admins cannot vote" });
     }
 
-    candidate.votes.push({ user: userId });
+    candidate.votes.push({ user: userId, event: eventId });
     candidate.voteCount++;
     await candidate.save();
-
-    user.isVoted = true;
-    await user.save();
 
     res.status(200).json({
       message: "Vote cast successfully",

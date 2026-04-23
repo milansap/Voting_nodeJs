@@ -19,3 +19,8 @@ export async function checkUserVoteStatus(): Promise<any> {
   const response = await authService.get(`/vote/status`);
   return response.data;
 }
+
+export async function checkEventVoteStatus(eventId: string): Promise<any> {
+  const response = await authService.get(`/vote/status/${eventId}`);
+  return response.data;
+}
