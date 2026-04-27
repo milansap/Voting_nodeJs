@@ -189,14 +189,14 @@ router.get("/vote/status/:eventId", jwtAuthMiddleware, async (req, res) => {
     const userId = req.user.id;
     const eventId = req.params.eventId;
 
-    // Find all candidates for this event and check if user voted for any of them
-    const candidates = await Candidate.find({
-      events: eventId,
-      "votes.user": userId,
-      "votes.event": eventId,
-    });
+    // Check if user has voted for this event
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-    const hasVotedForEvent = candidates.length > 0;
+    const hasVotedForEvent = user.votedEvents && user.votedEvents.includes(eventId);
 
     res.status(200).json({ hasVoted: hasVotedForEvent });
   } catch (err) {

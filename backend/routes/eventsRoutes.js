@@ -18,26 +18,25 @@ const checkAdminRole = async (userId) => {
   }
 };
 
-const mapCandidateRecord = (candidate) => ({
+const mapCandidateRecord = (candidate, voteCount = 0) => ({
   id: candidate._id,
   name: candidate.name,
   party: candidate.party,
   age: candidate.age,
   image: candidate.image,
   position: candidate.position,
-  voteCount: candidate.voteCount,
+  voteCount: voteCount,
   votesCount: candidate.votes?.length ?? 0,
 });
 
 const mapEventRecord = (event, candidateMap) => {
-  const candidateIds = (event.candidates || []).map((candidateId) =>
-    String(candidateId),
-  );
-
-  const candidates = candidateIds
-    .map((candidateId) => candidateMap.get(candidateId))
-    .filter(Boolean)
-    .map(mapCandidateRecord);
+  const candidates = (event.candidates || [])
+    .map((item) => {
+      const candidateId = String(item.candidate || item);
+      const candidate = candidateMap.get(candidateId);
+      return candidate ? mapCandidateRecord(candidate, item.voteCount || 0) : null;
+    })
+    .filter(Boolean);
 
   return {
     id: event._id,
@@ -98,7 +97,10 @@ const validateCandidateIds = async (candidateIds) => {
 
   return {
     isValid: true,
-    candidateIds: uniqueCandidateIds,
+    candidateIds: uniqueCandidateIds.map((candidateId) => ({
+      candidate: candidateId,
+      voteCount: 0,
+    })),
   };
 };
 
@@ -108,7 +110,7 @@ router.get("/", jwtAuthMiddleware, async (req, res) => {
     const allCandidateIds = [
       ...new Set(
         events.flatMap((event) =>
-          (event.candidates || []).map((candidateId) => String(candidateId)),
+          (event.candidates || []).map((item) => String(item.candidate || item)),
         ),
       ),
     ];
@@ -143,8 +145,8 @@ router.get("/:eventId", jwtAuthMiddleware, async (req, res) => {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    const candidateIds = (event.candidates || []).map((candidateId) =>
-      String(candidateId),
+    const candidateIds = (event.candidates || []).map((item) =>
+      String(item.candidate || item),
     );
     const candidates = await Candidate.find({
       _id: { $in: candidateIds },

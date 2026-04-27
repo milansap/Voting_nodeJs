@@ -47,10 +47,6 @@ const candidateSchema = new mongoose.Schema({
       },
     },
   ],
-  voteCount: {
-    type: Number,
-    default: 0,
-  },
 });
 
 const Candidates = mongoose.model("Candidates", candidateSchema);

@@ -25,9 +25,15 @@ const eventSchema = new mongoose.Schema({
   },
   candidates: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Candidates",
-      required: true,
+      candidate: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Candidates",
+        required: true,
+      },
+      voteCount: {
+        type: Number,
+        default: 0,
+      },
     },
   ],
 });

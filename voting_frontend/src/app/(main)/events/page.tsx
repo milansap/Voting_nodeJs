@@ -191,7 +191,7 @@ const EventsPage = () => {
                       {String(
                         events.filter(
                           (e: EventRecord) =>
-                            e.status?.toLowerCase() === "active",
+                            e.status?.toLowerCase() === "ongoing",
                         ).length,
                       ).padStart(2, "0")}
                     </p>
@@ -225,7 +225,7 @@ const EventsPage = () => {
               {events.map((event: EventRecord, index: number) => {
                 const statusCfg = getStatusConfig(event.status);
                 const duration = getDuration(event.startDate, event.endDate);
-                const isActive = event.status?.toLowerCase() === "active";
+                const isActive = event.status?.toLowerCase() === "ongoing";
 
                 return (
                   <Link

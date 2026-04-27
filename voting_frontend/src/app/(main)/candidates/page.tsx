@@ -93,7 +93,10 @@ function CandidateCard({ candidate, isLeader, pct }: CandidateCardProps) {
           >
             {candidate.name}
           </span>
-          <Badge variant="outline" className="border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30">
+          <Badge
+            variant="outline"
+            className="border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30"
+          >
             {candidate.party}
           </Badge>
         </div>
@@ -156,7 +159,9 @@ function CandidateCard({ candidate, isLeader, pct }: CandidateCardProps) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-gray-400 dark:text-zinc-500 italic">No votes cast yet</p>
+            <p className="text-sm text-gray-400 dark:text-zinc-500 italic">
+              No votes cast yet
+            </p>
           )}
         </div>
       </CardContent>
@@ -165,14 +170,14 @@ function CandidateCard({ candidate, isLeader, pct }: CandidateCardProps) {
 }
 
 export default function CandidatePage() {
-  const {
-    data: candidates,
-    isLoading,
-  } = useQuery({
+  const { data: candidates, isLoading } = useQuery({
     queryKey: ["candidates"],
     queryFn: getCandidates,
   });
-  const total = candidates?.reduce((s: number, c: Candidate) => s + c.votesCount, 0);
+  const total = candidates?.reduce(
+    (s: number, c: Candidate) => s + c.votesCount,
+    0,
+  );
   const leader = candidates?.reduce((a: Candidate, b: Candidate) =>
     a.votesCount > b.votesCount ? a : b,
   );
@@ -321,7 +326,8 @@ export default function CandidatePage() {
                 key={c.id}
                 candidate={c}
                 isLeader={
-                  total && total > 0 &&
+                  total &&
+                  total > 0 &&
                   c.votesCount === leader?.votesCount &&
                   c.votesCount > 0
                 }

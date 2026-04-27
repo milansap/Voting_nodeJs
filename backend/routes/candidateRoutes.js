@@ -31,30 +31,36 @@ router.get("/", async (req, res) => {
     const { eventId } = req.query;
 
     if (eventId) {
-      const event = await Events.findById(eventId).populate("candidates");
+      const event = await Events.findById(eventId).populate("candidates.candidate");
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
       }
 
-      const records = event.candidates.map((candidate) => ({
-        id: candidate._id,
-        name: candidate.name,
-        party: candidate.party,
-        age: candidate.age,
-        image: candidate.image,
-        position: candidate.position,
-        voteCount: candidate.voteCount,
-        votes: candidate.votes.map((vote) => ({
-          user: vote.user,
-          votedAt: vote.votedAt,
-        })),
-        votesCount: candidate.votes.length,
-      }));
+      const records = event.candidates.map((item) => {
+        const candidate = item.candidate;
+        const eventVotes = candidate.votes.filter(
+          (vote) => vote.event.toString() === eventId
+        );
+        return {
+          id: candidate._id,
+          name: candidate.name,
+          party: candidate.party,
+          age: candidate.age,
+          image: candidate.image,
+          position: candidate.position,
+          voteCount: item.voteCount,
+          votes: eventVotes.map((vote) => ({
+            user: vote.user,
+            votedAt: vote.votedAt,
+          })),
+         
+        };
+      });
 
       return res.status(200).json(records);
     }
 
-    // Otherwise, fetch all candidates
+    // Otherwise, fetch all candidates without event-specific counts
     const candidates = await Candidate.find();
     const records = candidates.map((candidate) => ({
       id: candidate._id,
@@ -62,12 +68,11 @@ router.get("/", async (req, res) => {
       party: candidate.party,
       image: candidate.image,
       position: candidate.position,
-      voteCount: candidate.voteCount,
       votes: candidate.votes.map((vote) => ({
         user: vote.user,
         votedAt: vote.votedAt,
       })),
-      votesCount: candidate.votes.length,
+     
     }));
     res.status(200).json(records);
   } catch (err) {
@@ -239,30 +244,63 @@ router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if user has already voted for ANY candidate in THIS event
-    const allCandidatesInEvent = await Candidate.find({ events: eventId });
-    const hasVotedForEvent = allCandidatesInEvent.some((cand) =>
-      cand.votes.some(
-        (vote) => vote.user.toString() === userId && vote.event.toString() === eventId
-      )
-    );
-    
-    if (hasVotedForEvent) {
-      return res.status(403).json({ message: "You have already voted for this event" });
+    // Check if user's role is admin
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Admins cannot vote" });
     }
 
+    // Check if event voting is active
     if (event.status !== "ongoing") {
       return res
         .status(403)
         .json({ message: "Voting is not active for this event" });
     }
-    if (user.role === "admin") {
-      return res.status(403).json({ message: "Admins cannot vote" });
+
+    // Check if user is assigned to this event
+    const isAssignedToEvent = user.assignedEvents.some(
+      (eventIdInArray) => eventIdInArray.toString() === eventId,
+    );
+    if (user.assignedEvents.length > 0 && !isAssignedToEvent) {
+      return res
+        .status(403)
+        .json({ message: "You are not assigned to vote in this event" });
     }
 
+    // Check if user has already voted in this event by checking all candidates in the event
+    const allCandidatesInEvent = await Candidate.find({ events: eventId });
+    const hasVotedForEvent = allCandidatesInEvent.some((cand) =>
+      cand.votes.some(
+        (vote) =>
+          vote.user.toString() === userId && vote.event.toString() === eventId,
+      ),
+    );
+
+    if (hasVotedForEvent) {
+      return res
+        .status(403)
+        .json({ message: "You have already voted for this event" });
+    }
+
+    // Add vote to candidate
     candidate.votes.push({ user: userId, event: eventId });
-    candidate.voteCount++;
     await candidate.save();
+
+    // Update vote count in event's candidates array
+    const candidateInEvent = event.candidates.find(
+      (c) => c.candidate.toString() === candidateId
+    );
+    if (candidateInEvent) {
+      candidateInEvent.voteCount++;
+    } else {
+      // If candidate not in event candidates array, add it
+      event.candidates.push({ candidate: candidateId, voteCount: 1 });
+    }
+    await event.save();
+
+    // Add event to user's votedEvents array
+    user.votedEvents.push(eventId);
+    user.isVoted = true; // Keep for backward compatibility
+    await user.save();
 
     res.status(200).json({
       message: "Vote cast successfully",
@@ -274,15 +312,130 @@ router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
   }
 });
 
+router.post("/assign-event", jwtAuthMiddleware, async (req, res) => {
+  try {
+    if (!req.user || !(await checkAdminRole(req.user.id))) {
+      return res.status(403).json({ message: "Forbidden: Admins only" });
+    }
+
+    const { userId, eventId } = req.body;
+
+    if (!userId || !eventId) {
+      return res
+        .status(400)
+        .json({ message: "userId and eventId are required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const event = await Events.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    // Check if user is already assigned to this event
+    const isAlreadyAssigned = user.assignedEvents.some(
+      (assignedEventId) => assignedEventId.toString() === eventId,
+    );
+
+    if (isAlreadyAssigned) {
+      return res
+        .status(400)
+        .json({ message: "User is already assigned to this event" });
+    }
+
+    user.assignedEvents.push(eventId);
+    await user.save();
+
+    res.status(200).json({
+      message: "Event assigned to user successfully",
+      user: user,
+    });
+  } catch (err) {
+    console.error("Error assigning event", err);
+    res.status(500).json({ error: "Failed to assign event" });
+  }
+});
+
+router.post("/remove-assigned-event", jwtAuthMiddleware, async (req, res) => {
+  try {
+    if (!req.user || !(await checkAdminRole(req.user.id))) {
+      return res.status(403).json({ message: "Forbidden: Admins only" });
+    }
+
+    const { userId, eventId } = req.body;
+
+    if (!userId || !eventId) {
+      return res
+        .status(400)
+        .json({ message: "userId and eventId are required" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Remove event from assignedEvents
+    user.assignedEvents = user.assignedEvents.filter(
+      (assignedEventId) => assignedEventId.toString() !== eventId,
+    );
+    await user.save();
+
+    res.status(200).json({
+      message: "Event assignment removed successfully",
+      user: user,
+    });
+  } catch (err) {
+    console.error("Error removing event assignment", err);
+    res.status(500).json({ error: "Failed to remove event assignment" });
+  }
+});
+
 router.get("/vote/count", async (req, res) => {
   try {
-    const candidates = await Candidate.find().sort({ voteCount: "desc" });
-    const records = candidates.map((data) => {
-      return {
-        party: data.party,
-        count: data.voteCount,
-      };
+    const { eventId } = req.query;
+
+    if (eventId) {
+      // Get vote counts for a specific event
+      const event = await Events.findById(eventId).populate("candidates.candidate");
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      const records = event.candidates
+        .sort((a, b) => b.voteCount - a.voteCount)
+        .map((item) => {
+          return {
+            candidateId: item.candidate._id,
+            party: item.candidate.party,
+            count: item.voteCount,
+          };
+        });
+
+      return res.status(200).json(records);
+    }
+
+    // Get overall vote counts across all events
+    const events = await Events.find().populate("candidates.candidate");
+    const voteCounts = {};
+
+    events.forEach((event) => {
+      event.candidates.forEach((item) => {
+        const party = item.candidate.party;
+        voteCounts[party] = (voteCounts[party] || 0) + item.voteCount;
+      });
     });
+
+    const records = Object.entries(voteCounts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([party, count]) => ({
+        party,
+        count,
+      }));
 
     return res.status(200).json(records);
   } catch (err) {

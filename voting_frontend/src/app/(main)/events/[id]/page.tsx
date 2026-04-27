@@ -106,16 +106,13 @@ export default function EventDetailPage() {
   });
 
   // Check if user has voted for THIS specific event
-  const {
-    data: voteStatusData,
-    isLoading: isCheckingVoteStatus,
-  } = useQuery({
+  const { data: voteStatusData, isLoading: isCheckingVoteStatus } = useQuery({
     queryKey: ["eventVoteStatus", id],
     queryFn: () => checkEventVoteStatus(id),
     enabled: Boolean(id),
   });
 
-  const userVoteStatus = voteStatusData?.hasVoted || false;
+  const userVoteStatus = voteStatusData?.hasVoted;
 
   const castVoteMutation = useMutation({
     mutationFn: castVote,
@@ -408,7 +405,13 @@ export default function EventDetailPage() {
                             disabled={userVoteStatus}
                             className="mt-5 w-1/2 cursor-pointer bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400"
                           >
-                            {userVoteStatus ? "Already Voted" : "Vote Now!"}
+                            {userVoteStatus
+                              ? "Already Voted"
+                              : event?.status === "upcoming"
+                                ? "Voting not started"
+                                : event?.status === "completed"
+                                  ? "Voting ended"
+                                  : "Vote Now"}
                           </Button>
                         </div>
                       </div>

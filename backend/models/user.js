@@ -16,6 +16,18 @@ const userSchema = new mongoose.Schema(
       default: "voter",
     },
     isVoted: { type: Boolean, default: false },
+    votedEvents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Events",
+      },
+    ],
+    assignedEvents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Events",
+      },
+    ],
     image: {
       type: String,
       default: "/uploads/profile/default.png",
