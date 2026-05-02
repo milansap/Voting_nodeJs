@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Tooltip,
@@ -8,8 +8,10 @@ import {
 } from "@/components/ui/tooltip";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/lib/authStore";
 
 import {
   Bell,
@@ -54,26 +56,13 @@ interface NavItem {
   href: string;
 }
 
-const navItems: NavItem[] = [
-  { label: "Dashboard", icon: Home, active: true, href: "/admin/dashboard" },
-  { label: "Events", icon: CalendarDays, active: false, href: "/admin/events" },
-  {
-    label: "Candidates",
-    icon: ClipboardList,
-    active: false,
-    href: "/admin/candidates",
-  },
-  { label: "Users", icon: UserCog, active: false, href: "/admin/users" },
-  {
-    label: "Analytics",
-    icon: BarChart3,
-    active: false,
-    href: "/admin/analytics",
-  },
-  { label: "Settings", icon: Settings, active: false, href: "/admin/settings" },
-];
-
-function SidebarNavContent({ collapsed }: { collapsed: boolean }) {
+function SidebarNavContent({
+  collapsed,
+  navItems,
+}: {
+  collapsed: boolean;
+  navItems: NavItem[];
+}) {
   return (
     <TooltipProvider delayDuration={0}>
       <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
@@ -142,6 +131,59 @@ export default function RootLayout({
 }>) {
   const [collapsed, setCollapsed] = useState(false);
   const [dark, setDark] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const { isAdmin, isLoggedIn, removeToken, setAdmin } = useAuthStore();
+
+  const navItems: NavItem[] = [
+    {
+      label: "Dashboard",
+      icon: Home,
+      active: pathname === "/admin/dashboard",
+      href: "/admin/dashboard",
+    },
+    {
+      label: "Events",
+      icon: CalendarDays,
+      active: pathname === "/admin/events",
+      href: "/admin/events",
+    },
+    {
+      label: "Candidates",
+      icon: ClipboardList,
+      active: pathname === "/admin/candidates",
+      href: "/admin/candidates",
+    },
+    {
+      label: "Users",
+      icon: UserCog,
+      active: pathname === "/admin/users",
+      href: "/admin/users",
+    },
+    {
+      label: "Analytics",
+      icon: BarChart3,
+      active: pathname === "/admin/analytics",
+      href: "/admin/analytics",
+    },
+    {
+      label: "Settings",
+      icon: Settings,
+      active: pathname === "/admin/settings",
+      href: "/admin/settings",
+    },
+  ];
+
+  const logout = () => {
+    removeToken();
+    setAdmin(false);
+  };
+
+  useEffect(() => {
+    if (!isAdmin || !isLoggedIn) {
+      router.push("/admin/login");
+    }
+  }, [isAdmin, isLoggedIn, router]);
   return (
     <div className={dark ? "dark" : ""}>
       <div className="min-h-screen bg-[#F9FAFB] dark:bg-[#0d1f17] flex font-sans">
@@ -177,7 +219,7 @@ export default function RootLayout({
           </div>
 
           {/* Nav */}
-          <SidebarNavContent collapsed={collapsed} />
+          <SidebarNavContent collapsed={collapsed} navItems={navItems} />
 
           {/* Admin profile */}
           <div
@@ -227,7 +269,10 @@ export default function RootLayout({
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-500 focus:text-red-500">
+                    <DropdownMenuItem
+                      onClick={() => logout()}
+                      className="text-red-500 focus:text-red-500"
+                    >
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout
                     </DropdownMenuItem>
@@ -284,7 +329,7 @@ export default function RootLayout({
 
             {/* Mobile Nav */}
             <div className="flex flex-col h-[calc(100%-80px)]">
-              <SidebarNavContent collapsed={false} />
+              <SidebarNavContent collapsed={false} navItems={navItems} />
 
               {/* Mobile Admin profile */}
               <div className="px-4 py-4 border-t border-white/10">
@@ -315,7 +360,10 @@ export default function RootLayout({
                         <Settings className="w-4 h-4 mr-2" />
                         Settings
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-500 focus:text-red-500">
+                      <DropdownMenuItem
+                        onClick={() => logout()}
+                        className="text-red-500 focus:text-red-500"
+                      >
                         <LogOut className="w-4 h-4 mr-2" />
                         Logout
                       </DropdownMenuItem>

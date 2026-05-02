@@ -15,3 +15,15 @@ export async function updateProfilePicture(data: any): Promise<any> {
   });
   return response.data;
 }
+
+export async function updateProfile(data: {
+  name?: string;
+  email?: string;
+  mobile_number?: string;
+  address?: string;
+  image?: string;
+  citizenship_no?: string;
+}): Promise<any> {
+  const response = await authService.put("profile", data);
+  return response.data;
+}

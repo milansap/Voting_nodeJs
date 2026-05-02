@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { Card } from "@/components/ui/card";
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -18,7 +19,10 @@ export default function AdminLoginPage() {
     mutationKey: ["admin-login"],
     mutationFn: login,
     onSuccess: (data) => {
-      setAdmin(data?.token);
+      // Store the token and mark as admin
+      const { setToken } = useAuthStore.getState();
+      setToken(data?.token);
+      setAdmin(true);
       toast.success("Welcome back, Admin!");
       router.push("/admin/dashboard");
     },

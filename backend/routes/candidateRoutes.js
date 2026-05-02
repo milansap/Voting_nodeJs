@@ -6,6 +6,7 @@ const Events = require("../models/events");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const mongoose = require("mongoose");
 
 const { jwtAuthMiddleware } = require("../jwt");
 const { createUpload } = require("../uploadMiddleware");
@@ -67,6 +68,7 @@ router.get("/", async (req, res) => {
       name: candidate.name,
       party: candidate.party,
       image: candidate.image,
+      age: candidate.age,
       position: candidate.position,
       votes: candidate.votes.map((vote) => ({
         user: vote.user,
@@ -224,94 +226,114 @@ router.delete("/:candidateId", jwtAuthMiddleware, async (req, res) => {
   }
 });
 
-  router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
+router.post("/vote/:candidateId", jwtAuthMiddleware, async (req, res) => {
   const { candidateId } = req.params;
   const userId = req.user.id;
   const { eventId } = req.body;
 
-  // ✅ Validate required fields early
   if (!eventId) {
-    return res.status(400).json({ message: "eventId is required in request body" });
+    return res
+      .status(400)
+      .json({ message: "eventId is required in request body" });
   }
 
   if (!candidateId) {
     return res.status(400).json({ message: "candidateId is required" });
   }
 
-  // ✅ Validate ObjectId formats
   const isValidObjectId = (id) => /^[a-f\d]{24}$/i.test(id);
   if (!isValidObjectId(candidateId) || !isValidObjectId(eventId)) {
-    return res.status(400).json({ message: "Invalid candidateId or eventId format" });
+    return res
+      .status(400)
+      .json({ message: "Invalid candidateId or eventId format" });
   }
 
   try {
-    // ✅ Fetch all required documents in parallel for better performance
     const [candidate, event, user] = await Promise.all([
       Candidate.findById(candidateId),
       Events.findById(eventId),
       User.findById(userId),
     ]);
 
-    // ✅ Existence checks
-    if (!candidate) {
+    if (!candidate)
       return res.status(404).json({ message: "Candidate not found" });
-    }
-    if (!event) {
-      return res.status(404).json({ message: "Event not found" });
-    }
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+    if (!event) return res.status(404).json({ message: "Event not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // ✅ Admin cannot vote
     if (user.role === "admin") {
-      return res.status(403).json({ message: "Admins are not allowed to vote" });
+      return res
+        .status(403)
+        .json({ message: "Admins are not allowed to vote" });
     }
 
-    // ✅ Event must be ongoing
     if (event.status !== "ongoing") {
-      return res.status(403).json({ message: "Voting is not active for this event" });
+      return res
+        .status(403)
+        .json({ message: "Voting is not active for this event" });
     }
 
-    // ✅ Check if candidate belongs to this event
-    const candidateBelongsToEvent =
-      Array.isArray(candidate.events) &&
-      candidate.events.some((eid) => eid.toString() === eventId);
-    if (!candidateBelongsToEvent) {
-      return res.status(400).json({ message: "Candidate is not part of this event" });
+    //  Normalize candidates array — handle both plain IDs and {candidate, voteCount} objects
+    const normalizedCandidates = event.candidates.map((c) => {
+      if (c && typeof c === "object" && c.candidate) {
+        return {
+          id: c.candidate.toString(),
+          voteCount: c.voteCount || 0,
+          raw: c,
+        };
+      }
+      return { id: c.toString(), voteCount: 0, raw: c };
+    });
+
+    //  Check if candidate belongs to this event
+    const matchedEntry = normalizedCandidates.find((c) => c.id === candidateId);
+    if (!matchedEntry) {
+      return res
+        .status(400)
+        .json({ message: "Candidate is not part of this event" });
     }
 
-    // ✅ Check if user is assigned to this event (only restrict if assignedEvents is non-empty)
+    //  Check if user is assigned to this event
     if (user.assignedEvents && user.assignedEvents.length > 0) {
       const isAssignedToEvent = user.assignedEvents.some(
-        (assignedEventId) => assignedEventId.toString() === eventId
+        (assignedEventId) => assignedEventId.toString() === eventId,
       );
       if (!isAssignedToEvent) {
-        return res.status(403).json({ message: "You are not assigned to vote in this event" });
+        return res
+          .status(403)
+          .json({ message: "You are not assigned to vote in this event" });
       }
     }
 
-    // ✅ FIXED: Check if user already voted in this event using votedEvents array
+    // Check if user already voted in this event
     const hasVotedForEvent =
       Array.isArray(user.votedEvents) &&
-      user.votedEvents.some((votedEventId) => votedEventId.toString() === eventId);
+      user.votedEvents.some(
+        (votedEventId) => votedEventId.toString() === eventId,
+      );
     if (hasVotedForEvent) {
-      return res.status(403).json({ message: "You have already voted in this event" });
+      return res
+        .status(403)
+        .json({ message: "You have already voted in this event" });
     }
 
     // ✅ Add vote to candidate's votes array
-    candidate.votes.push({ user: userId, event: eventId });
+    candidate.votes.push({
+      user: new mongoose.Types.ObjectId(userId),
+      event: new mongoose.Types.ObjectId(eventId),
+    });
     await candidate.save();
 
-    // ✅ Update voteCount in event's candidates array
-    const candidateInEvent = event.candidates.find(
-      (c) => c.candidate.toString() === candidateId
-    );
-    if (candidateInEvent) {
-      candidateInEvent.voteCount += 1;
+    if (matchedEntry.raw && matchedEntry.raw.candidate) {
+      matchedEntry.raw.voteCount = matchedEntry.voteCount + 1;
     } else {
-      event.candidates.push({ candidate: candidateId, voteCount: 1 });
+      const idx = event.candidates.findIndex(
+        (c) => c.toString() === candidateId,
+      );
+      if (idx !== -1) {
+        event.candidates[idx] = { candidate: candidateId, voteCount: 1 };
+      }
     }
+    event.markModified("candidates");
     await event.save();
 
     // ✅ Mark user as voted
@@ -319,28 +341,24 @@ router.delete("/:candidateId", jwtAuthMiddleware, async (req, res) => {
     user.isVoted = true;
     await user.save();
 
-    // ✅ Return clean response (avoid sending full candidate doc with votes)
     return res.status(200).json({
       message: "Vote cast successfully",
       data: {
         candidateId: candidate._id,
         candidateName: candidate.name,
         eventId: event._id,
-        eventName: event.name,
-        totalVotes: candidateInEvent
-          ? candidateInEvent.voteCount
-          : 1,
+        eventName: event.title || event.name,
+        totalVotes: matchedEntry.voteCount + 1,
       },
     });
   } catch (err) {
-    console.error("Error casting vote:", err);
-
-    // ✅ Handle Mongoose CastError separately
     if (err.name === "CastError") {
       return res.status(400).json({ message: "Invalid ID format provided" });
     }
 
-    return res.status(500).json({ message: "Internal server error. Failed to cast vote." });
+    return res
+      .status(500)
+      .json({ message: "Internal server error. Failed to cast vote." });
   }
 });
 

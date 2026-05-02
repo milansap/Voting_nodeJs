@@ -13,3 +13,14 @@ export interface LoginData {
   citizenship_no: string;
   password: string;
 }
+
+export interface signupData {
+  name: string;
+  age?: number;
+  email?: string;
+  mobile_number: string;
+  address?: string;
+  citizenship_no: string;
+  password: string;
+  confirmPassword: string;
+}

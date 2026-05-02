@@ -29,24 +29,24 @@ const candidateSchema = new mongoose.Schema({
       ref: "Events",
     },
   ],
-  votes: [
-    {
-      user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-      },
-      event: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Events",
-        required: true,
-      },
-      votedAt: {
-        type: Date,
-        default: Date.now,
-      },
+ votes: [
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-  ],
+    event: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Events",
+      required: true,
+    },
+    votedAt: {
+      type: Date,
+      default: Date.now,  
+    },
+  },
+],
 });
 
 const Candidates = mongoose.model("Candidates", candidateSchema);

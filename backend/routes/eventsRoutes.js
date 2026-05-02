@@ -26,7 +26,7 @@ const mapCandidateRecord = (candidate, voteCount = 0) => ({
   image: candidate.image,
   position: candidate.position,
   voteCount: voteCount,
-  votesCount: candidate.votes?.length ?? 0,
+  votesCount: voteCount,
 });
 
 const mapEventRecord = (event, candidateMap) => {
@@ -34,7 +34,9 @@ const mapEventRecord = (event, candidateMap) => {
     .map((item) => {
       const candidateId = String(item.candidate || item);
       const candidate = candidateMap.get(candidateId);
-      return candidate ? mapCandidateRecord(candidate, item.voteCount || 0) : null;
+      return candidate
+        ? mapCandidateRecord(candidate, item.voteCount || 0)
+        : null;
     })
     .filter(Boolean);
 
@@ -110,7 +112,9 @@ router.get("/", jwtAuthMiddleware, async (req, res) => {
     const allCandidateIds = [
       ...new Set(
         events.flatMap((event) =>
-          (event.candidates || []).map((item) => String(item.candidate || item)),
+          (event.candidates || []).map((item) =>
+            String(item.candidate || item),
+          ),
         ),
       ),
     ];

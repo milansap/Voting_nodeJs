@@ -20,3 +20,4 @@ export async function signup(data: signupData): Promise<any> {
   });
   return response.data;
 }
+

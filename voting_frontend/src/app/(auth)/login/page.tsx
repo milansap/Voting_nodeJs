@@ -13,21 +13,26 @@ import { useEffect } from "react";
 export default function LoginPage() {
   const router = useRouter();
 
-  const { setToken,isLoggedIn } = useAuthStore();
+  const { setToken, isLoggedIn } = useAuthStore();
   const loginMutation = useMutation({
     mutationKey: ["login"],
     mutationFn: login,
     onSuccess: (data) => {
-      setToken(data?.token);
-      router.push("/");
-      toast.success("Login successful!");
+      if (data.role !== "admin") {
+        setToken(data?.token);
+
+        router.push("/");
+        toast.success("Login successful!");
+      } else {
+        toast.error("please login from admin portal");
+      }
     },
     onError: (error) => {
       console.error("Login failed:", error);
     },
   });
 
-    useEffect(() => {
+  useEffect(() => {
     if (isLoggedIn) {
       router.push("/");
     }
