@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState } from "react";
@@ -120,7 +121,7 @@ export default function EventDetailPage() {
       toast.success("Your vote has been cast successfully!");
       setVoteDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (error:any) => {
       toast.error(error);
       setVoteDialogOpen(false);
     },
