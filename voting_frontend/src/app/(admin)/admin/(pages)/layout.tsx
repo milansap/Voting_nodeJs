@@ -275,7 +275,7 @@ export default function RootLayout({
                     >
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> 
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
