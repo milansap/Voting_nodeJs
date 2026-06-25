@@ -5,11 +5,24 @@ require("dotenv").config();
 const mongoURL =
   process.env.MONGO_URI;
 
-mongoose.connect(mongoURL, {
-  tls: true,
-  tlsAllowInvalidCertificates: false,
-  serverSelectionTimeoutMS: 10000,
-});
+async function connectToMongoDB() {
+  if (!mongoURL) {
+    console.error("MONGO_URI is not set in the backend .env file");
+    return;
+  }
+
+  try {
+    await mongoose.connect(mongoURL, {
+      tls: true,
+      tlsAllowInvalidCertificates: false,
+      serverSelectionTimeoutMS: 10000,
+    });
+  } catch (error) {
+    console.error("Error connecting to MongoDB:", error);
+  }
+}
+
+connectToMongoDB();
 
 const db = mongoose.connection;
 
